@@ -1,0 +1,11 @@
+{
+  "doc_fingerprint": "9f898564515efbfb9f41d30f36988d7719ef2aa70508cae04bcd8dcc3e745243",
+  "embed_model": "intfloat/multilingual-e5-large",
+  "faiss_dim": 1024,
+  "num_chunks": 197,
+  "chunking": {
+    "chunk_tokens": 350,
+    "overlap_tokens": 80
+  },
+  "chunk_tokenizer": "Qwen/Qwen2.5-7B-Instruct-AWQ"
+}
