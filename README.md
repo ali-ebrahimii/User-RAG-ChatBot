@@ -1,93 +1,138 @@
-# public_user_rag_bot
+# Persian User RAG Chatbot
 
+![Python](https://img.shields.io/badge/Python-3.10%2B-3776AB?logo=python&logoColor=white)
+![FastAPI](https://img.shields.io/badge/FastAPI-REST_API-009688?logo=fastapi&logoColor=white)
+![Qwen](https://img.shields.io/badge/LLM-Qwen_2.5-6C5CE7)
+![FAISS](https://img.shields.io/badge/Retrieval-FAISS-0467DF)
+![Docker](https://img.shields.io/badge/Deployment-Docker-2496ED?logo=docker&logoColor=white)
+![Status](https://img.shields.io/badge/Status-Pre--production-orange)
 
+A production-oriented Retrieval-Augmented Generation (RAG) assistant designed to answer Persian user questions from approved, domain-specific sources.
 
-## Getting started
+The project was developed in the context of **Saman Salamat (Saman Insurance Group)** for a health-insurance platform. It combines semantic retrieval with a Persian-capable large language model to provide useful answers while reducing hallucinations and keeping responses grounded in company-approved documents.
 
-To make it easy for you to get started with GitLab, here's a list of recommended next steps.
+> This public repository is a sanitized project overview. Internal documents, datasets, credentials, deployment configuration, and proprietary source code are intentionally excluded.
 
-Already a pro? Just edit this README.md and make it your own. Want to make it easy? [Use the template at the bottom](#editing-this-readme)!
+## The Problem
 
-## Add your files
+Important user information was distributed across multiple Persian resources, including:
 
-- [ ] [Create](https://docs.gitlab.com/ee/user/project/repository/web_editor.html#create-a-file) or [upload](https://docs.gitlab.com/ee/user/project/repository/web_editor.html#upload-a-file) files
-- [ ] [Add files using the command line](https://docs.gitlab.com/topics/git/add_files/#add-files-to-a-git-repository) or push an existing Git repository with the following command:
+- Frequently asked questions
+- Privacy policies
+- Terms and conditions
+- User guidance documents
+- Health-related PDF documents
 
+A general-purpose chatbot could respond fluently, but it could also generate unsupported or outdated information. In a health-insurance setting, a confident but incorrect answer is not acceptable.
+
+The goal was therefore to build an assistant that:
+
+1. retrieves the most relevant information from approved sources;
+2. answers in clear Persian using only the retrieved context;
+3. avoids unsupported claims; and
+4. returns a safe fallback when the available evidence is insufficient.
+
+## Key Capabilities
+
+- Persian text extraction, cleaning, and normalization
+- Configurable document chunking and metadata preservation
+- Dense semantic retrieval using a FAISS vector index
+- Context-grounded response generation with Qwen 2.5
+- Confidence-based rejection for low-quality retrieval
+- Safe fallback when an answer is not present in the sources
+- REST API integration for web and mobile clients
+- Separate API and model-serving layers
+- Rebuildable retrieval artifacts when source documents change
+- Docker-based, reproducible deployment workflow
+
+## System Architecture
+
+```mermaid
+flowchart TD
+    A["Approved Persian documents"] --> B["Extraction and normalization"]
+    B --> C["Chunking and dense embeddings"]
+    C --> D["FAISS vector index"]
+    E["User question"] --> F["FastAPI RAG service"]
+    D --> F
+    F --> G["Qwen 2.5 served with vLLM"]
+    G --> H["Grounded answer or safe fallback"]
 ```
-cd existing_repo
-git remote add origin https://gitlab.saman.health/ai/public_user_rag_bot.git
-git branch -M main
-git push -uf origin main
-```
 
-## Integrate with your tools
+The retrieval layer stores its generated artifacts in a dedicated directory, including the processed chunks, FAISS index, and index metadata. These artifacts can be rebuilt whenever documents are added or updated.
 
-- [ ] [Set up project integrations](https://gitlab.saman.health/ai/public_user_rag_bot/-/settings/integrations)
+## How It Works
 
-## Collaborate with your team
+1. **Ingestion:** Approved documents are collected and their Persian text is extracted.
+2. **Normalization:** Arabic/Persian character variants, spacing, punctuation, and common text noise are normalized.
+3. **Indexing:** Documents are divided into meaningful chunks and converted into dense embeddings.
+4. **Retrieval:** The user question is normalized and matched against the FAISS index.
+5. **Validation:** Retrieval scores are checked before context is passed to the language model.
+6. **Generation:** Qwen 2.5 produces a Persian answer constrained by the retrieved evidence.
+7. **Fallback:** If the system cannot find adequate evidence, it reports that the answer is not available in the current sources instead of guessing.
 
-- [ ] [Invite team members and collaborators](https://docs.gitlab.com/ee/user/project/members/)
-- [ ] [Create a new merge request](https://docs.gitlab.com/ee/user/project/merge_requests/creating_merge_requests.html)
-- [ ] [Automatically close issues from merge requests](https://docs.gitlab.com/ee/user/project/issues/managing_issues.html#closing-issues-automatically)
-- [ ] [Enable merge request approvals](https://docs.gitlab.com/ee/user/project/merge_requests/approvals/)
-- [ ] [Set auto-merge](https://docs.gitlab.com/user/project/merge_requests/auto_merge/)
+## Technology Stack
 
-## Test and Deploy
+| Area | Technologies |
+|---|---|
+| Language | Python |
+| API layer | FastAPI, Pydantic, REST |
+| Language model | Qwen 2.5 Instruct |
+| Model serving | vLLM |
+| Retrieval | Dense embeddings, FAISS |
+| Text processing | Persian NLP normalization, OCR preprocessing |
+| Deployment | Docker, Docker Compose |
+| Data artifacts | JSONL chunks, FAISS index, metadata |
+| Testing | API, retrieval, grounding, and fallback checks |
 
-Use the built-in continuous integration in GitLab.
+## Main Engineering Challenges
 
-- [ ] [Get started with GitLab CI/CD](https://docs.gitlab.com/ee/ci/quick_start/)
-- [ ] [Analyze your code for known vulnerabilities with Static Application Security Testing (SAST)](https://docs.gitlab.com/ee/user/application_security/sast/)
-- [ ] [Deploy to Kubernetes, Amazon EC2, or Amazon ECS using Auto Deploy](https://docs.gitlab.com/ee/topics/autodevops/requirements.html)
-- [ ] [Use pull-based deployments for improved Kubernetes management](https://docs.gitlab.com/ee/user/clusters/agent/)
-- [ ] [Set up protected environments](https://docs.gitlab.com/ee/ci/environments/protected_environments.html)
+| Challenge | Approach |
+|---|---|
+| Persian spelling and character variation | Added Persian-aware normalization before indexing and querying |
+| Semantically similar questions with different wording | Used dense vector retrieval rather than exact keyword matching |
+| LLM hallucination | Restricted generation to retrieved evidence and added an explicit no-answer fallback |
+| Weak or irrelevant retrieval results | Introduced a configurable confidence threshold before generation |
+| Updating the knowledge base | Separated source ingestion from generated retrieval artifacts |
+| Reproducible deployment | Containerized the API and model-serving components |
 
-***
+## My Contribution
 
-# Editing this README
+I designed and implemented the core workflow end to end, including:
 
-When you're ready to make this README your own, just edit this file and use the handy template below (or feel free to structure it however you want - this is just a starting point!). Thanks to [makeareadme.com](https://www.makeareadme.com/) for this template.
+- analyzing the product and user-support requirements;
+- preparing and normalizing Persian source documents;
+- designing the chunking, embedding, and retrieval pipeline;
+- building and validating the FAISS-based dense index;
+- integrating Qwen 2.5 with the RAG service;
+- developing the API layer and response guardrails;
+- containerizing the application and preparing it for technical handoff; and
+- evaluating retrieval quality, grounded responses, and failure cases.
 
-## Suggestions for a good README
+This work was connected to my broader responsibilities in health-data and business analytics, including large-scale data collection from Darmanet and other health-related sources, Python pipelines for data cleaning and normalization, medical PDF processing with OCR/NLP, and evaluation of Persian language models such as Qwen, Llama, and mT5.
 
-Every project is different, so consider which of these sections apply to yours. The sections used in the template are suggestions for most open source projects. Also keep in mind that while a README can be too long and detailed, too long is better than too short. If you think your README is too long, consider utilizing another form of documentation rather than cutting out information.
+## Project Status
 
-## Name
-Choose a self-explaining name for your project.
+The system reached a **working pre-production prototype** with a testable API and reproducible deployment structure. It was evaluated internally and prepared for technical review and handoff.
 
-## Description
-Let people know what your project can do specifically. Provide context and add a link to any reference visitors might be unfamiliar with. A list of Features or a Background subsection can also be added here. If there are alternatives to your project, this is a good place to list differentiating factors.
+It is not presented here as a publicly deployed production service. The public repository focuses on the engineering case study because the original documents, data, infrastructure details, and parts of the implementation belong to a professional and potentially sensitive environment.
 
-## Badges
-On some READMEs, you may see small images that convey metadata, such as whether or not all the tests are passing for the project. You can use Shields to add some to your README. Many services also have instructions for adding a badge.
+## Design Principles
 
-## Visuals
-Depending on what you are making, it can be a good idea to include screenshots or even a video (you'll frequently see GIFs rather than actual videos). Tools like ttygif can help, but check out Asciinema for a more sophisticated method.
+- **Grounded over fluent:** a supported answer is more valuable than an impressive guess.
+- **Safe by default:** missing evidence should produce a transparent fallback.
+- **Persian-aware:** normalization and retrieval are designed for real Persian user input.
+- **Modular:** ingestion, retrieval, generation, and API serving can evolve independently.
+- **Maintainable:** knowledge-base artifacts can be rebuilt without redesigning the service.
 
-## Installation
-Within a particular ecosystem, there may be a common way of installing things, such as using Yarn, NuGet, or Homebrew. However, consider the possibility that whoever is reading your README is a novice and would like more guidance. Listing specific steps helps remove ambiguity and gets people to using your project as quickly as possible. If it only runs in a specific context like a particular programming language version or operating system or has dependencies that have to be installed manually, also add a Requirements subsection.
+## Author
 
-## Usage
-Use examples liberally, and show the expected output if you can. It's helpful to have inline the smallest example of usage that you can demonstrate, while providing links to more sophisticated examples if they are too long to reasonably include in the README.
+**Ali Ebrahimi**  
+Data Analyst & AI Specialist  
+PhD Candidate in Electrical Engineering - Electronics, University of Tehran
 
-## Support
-Tell people where they can go to for help. It can be any combination of an issue tracker, a chat room, an email address, etc.
+- [GitHub](https://github.com/ali-ebrahimii)
+- [LinkedIn](https://www.linkedin.com/in/ali-ebrahimii/)
 
-## Roadmap
-If you have ideas for releases in the future, it is a good idea to list them in the README.
+---
 
-## Contributing
-State if you are open to contributions and what your requirements are for accepting them.
-
-For people who want to make changes to your project, it's helpful to have some documentation on how to get started. Perhaps there is a script that they should run or some environment variables that they need to set. Make these steps explicit. These instructions could also be useful to your future self.
-
-You can also document commands to lint the code or run tests. These steps help to ensure high code quality and reduce the likelihood that the changes inadvertently break something. Having instructions for running tests is especially helpful if it requires external setup, such as starting a Selenium server for testing in a browser.
-
-## Authors and acknowledgment
-Show your appreciation to those who have contributed to the project.
-
-## License
-For open source projects, say how it is licensed.
-
-## Project status
-If you have run out of energy or time for your project, put a note at the top of the README saying that development has slowed down or stopped completely. Someone may choose to fork your project or volunteer to step in as a maintainer or owner, allowing your project to keep going. You can also make an explicit request for maintainers.
+For interview discussions, this repository demonstrates my experience in **RAG architecture, Persian NLP, LLM integration, API development, retrieval evaluation, guardrails, and containerized AI services**.
