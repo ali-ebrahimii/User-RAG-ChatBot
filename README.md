@@ -11,7 +11,7 @@ A production-oriented Retrieval-Augmented Generation (RAG) assistant designed to
 
 The project was developed in the context of **Saman Salamat (Saman Insurance Group)** for a health-insurance platform. It combines semantic retrieval with a Persian-capable large language model to provide useful answers while reducing hallucinations and keeping responses grounded in company-approved documents.
 
-> This public repository is a sanitized project overview. Internal documents, datasets, credentials, deployment configuration, and proprietary source code are intentionally excluded.
+> This public repository is a sanitized portfolio snapshot. It includes approved reference documents and generated demo artifacts needed to inspect retrieval behavior. Credentials, private datasets, infrastructure configuration, and proprietary deployment files are excluded.
 
 ## The Problem
 
@@ -43,7 +43,7 @@ The goal was therefore to build an assistant that:
 - REST API integration for web and mobile clients
 - Separate API and model-serving layers
 - Rebuildable retrieval artifacts when source documents change
-- Docker-based, reproducible deployment workflow
+- Separate API and model-serving layers designed for deployment
 
 ## System Architecture
 
@@ -80,9 +80,50 @@ The retrieval layer stores its generated artifacts in a dedicated directory, inc
 | Model serving | vLLM |
 | Retrieval | Dense embeddings, FAISS |
 | Text processing | Persian NLP normalization, OCR preprocessing |
-| Deployment | Docker, Docker Compose |
+| Deployment | Docker and Docker Compose in the original deployment; private deployment files are omitted here |
 | Data artifacts | JSONL chunks, FAISS index, metadata |
 | Testing | API, retrieval, grounding, and fallback checks |
+
+## Run the Public Snapshot
+
+This demo is intended for a Linux machine with an NVIDIA GPU capable of serving the default AWQ model. The model server, API, and UI run as separate processes.
+
+1. Create two Python environments if you want to isolate the GPU model server from the API dependencies.
+2. Install API dependencies:
+
+```bash
+python -m pip install -r requirements.api.txt
+```
+
+3. Copy the example model-server configuration and add your own Hugging Face token:
+
+```bash
+cp secure_data.env.example secure_data.env
+```
+
+4. Install the vLLM dependencies from `requirements.vllm.txt`, then start the OpenAI-compatible model server:
+
+```bash
+bash run_vllm.sh
+```
+
+5. In another terminal, start the RAG API on port 8080:
+
+```bash
+VLLM_BASE_URL=http://127.0.0.1:8000 \
+uvicorn rag_api.main:app --host 0.0.0.0 --port 8080
+```
+
+6. Optionally start the Streamlit interface:
+
+```bash
+API_BASE_URL=http://127.0.0.1:8080 \
+streamlit run ui/streamlit_app.py
+```
+
+Health check: `GET http://127.0.0.1:8080/healthz`
+
+> Model downloads are large and GPU requirements depend on the selected model and quantization. Never commit `secure_data.env` or access tokens.
 
 ## Main Engineering Challenges
 
@@ -93,7 +134,7 @@ The retrieval layer stores its generated artifacts in a dedicated directory, inc
 | LLM hallucination | Restricted generation to retrieved evidence and added an explicit no-answer fallback |
 | Weak or irrelevant retrieval results | Introduced a configurable confidence threshold before generation |
 | Updating the knowledge base | Separated source ingestion from generated retrieval artifacts |
-| Reproducible deployment | Containerized the API and model-serving components |
+| Reproducible deployment | Separated the API and model-serving components; the original deployment was containerized |
 
 ## My Contribution
 
@@ -112,9 +153,9 @@ This work was connected to my broader responsibilities in health-data and busine
 
 ## Project Status
 
-The system reached a **working pre-production prototype** with a testable API and reproducible deployment structure. It was evaluated internally and prepared for technical review and handoff.
+The system reached a **working pre-production prototype** with a testable API and deployment-oriented structure. It was evaluated internally and prepared for technical review and handoff.
 
-It is not presented here as a publicly deployed production service. The public repository focuses on the engineering case study because the original documents, data, infrastructure details, and parts of the implementation belong to a professional and potentially sensitive environment.
+It is not presented here as a publicly deployed production service. This snapshot includes approved reference documents and generated artifacts for technical inspection; credentials, private datasets, infrastructure details, and proprietary deployment files remain excluded.
 
 ## Design Principles
 
